@@ -1,0 +1,5 @@
+rootProject.name = 'ms-fundamentals'
+include 'resource-service'
+include 'song-service'
+include 'resource-processor'
+
