@@ -1,4 +1,4 @@
-package pl.kempa.saska.service.exception;
+package pl.kempa.saska.listener.exception;
 
 public class IOServiceException extends RuntimeException {
   public IOServiceException(String message) {

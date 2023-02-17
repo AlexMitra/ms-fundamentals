@@ -11,12 +11,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import pl.kempa.saska.dto.SongIdDTO;
 import pl.kempa.saska.dto.SongInfoDTO;
-import pl.kempa.saska.service.SongService;
+import pl.kempa.saska.listener.SongService;
 
 @RestController
 @RequestMapping(value = "/api/songs")
@@ -32,11 +31,6 @@ public class SongController {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
     return ResponseEntity.ok(songInfoDTO);
-  }
-
-  @GetMapping
-  public boolean isExists(@RequestParam String fileName) {
-    return songService.isExists(fileName);
   }
 
   @PostMapping

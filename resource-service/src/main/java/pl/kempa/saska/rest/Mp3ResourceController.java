@@ -1,15 +1,16 @@
 package pl.kempa.saska.rest;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,62 +22,67 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.AllArgsConstructor;
 import pl.kempa.saska.dto.ApiErrorDTO;
 import pl.kempa.saska.dto.Mp3ResourceDetailsDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdListDTO;
 import pl.kempa.saska.dto.Mp3ResourceInfoDTO;
+import pl.kempa.saska.dto.Mp3ResourceS3InfoDTO;
+import pl.kempa.saska.listener.Mp3ResourceDBService;
+import pl.kempa.saska.listener.Mp3ResourceS3Service;
+import pl.kempa.saska.listener.RabbitMQService;
 import pl.kempa.saska.rest.exception.IncorrectIdParamException;
 import pl.kempa.saska.rest.util.WebClientUtil;
 import pl.kempa.saska.rest.validator.Mp3ResourceValidator;
-import pl.kempa.saska.service.Mp3ResourceS3Service;
 
 @RestController
 @RequestMapping(value = "/api/resources")
+@AllArgsConstructor
 public class Mp3ResourceController {
 
-  @Autowired private Mp3ResourceS3Service s3Service;
-  @Autowired private Mp3ResourceValidator validator;
-  @Autowired private WebClientUtil webClientUtil;
+  private Mp3ResourceS3Service s3Service;
+  private Mp3ResourceDBService mp3ResourceDBService;
+  private Mp3ResourceValidator validator;
+  private WebClientUtil webClientUtil;
+  private RabbitMQService rabbitMQService;
 
-  @GetMapping public ResponseEntity<List<Mp3ResourceInfoDTO>> getALl() {
+  @GetMapping
+  public ResponseEntity<List<Mp3ResourceS3InfoDTO>> getALl() {
     return ResponseEntity.ok(s3Service.getAll());
   }
 
-  @GetMapping("/{id}") public ResponseEntity<?> downloadById(@PathVariable Integer id,
-                                                             @RequestHeader HttpHeaders headers) {
-    Optional<Mp3ResourceDetailsDTO> mp3DetailsDTO =
-        Optional.ofNullable(webClientUtil.callFetchMp3Details(id));
+  @GetMapping("/{id}")
+  public ResponseEntity<?> downloadById(@PathVariable Integer id,
+                                        @RequestHeader HttpHeaders headers)
+      throws IOException {
     List<HttpRange> ranges = headers.getRange();
-    return mp3DetailsDTO.map(d -> s3Service.download(d, ranges))
-        .map(ResponseEntity::ok)
-        .orElseGet(() -> new ResponseEntity(HttpStatus.NOT_FOUND));
+    InputStream inputStream = s3Service.download(id, ranges);
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .body(inputStream.readAllBytes());
   }
 
-  @PostMapping public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) {
+  @PostMapping
+  public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) {
     Optional<ApiErrorDTO> error = validator.validate(file);
     if (error.isPresent()) {
       return ResponseEntity.badRequest()
           .body(error.get());
     }
-    if (webClientUtil.callIsMp3Exists(file)) {
-      return ResponseEntity.badRequest()
-          .body(new ApiErrorDTO(HttpStatus.BAD_REQUEST, "mp3 song has already saved"));
-    }
-    Mp3ResourceDetailsDTO mp3ResourceDetailsDTO = webClientUtil.callParseMp3Details(file);
-    Optional<String> eTag = s3Service.upload(file);
-    Optional<Mp3ResourceIdDTO> resourceIdDTO =
-        eTag.map(tag -> webClientUtil.callSaveMp3Details(mp3ResourceDetailsDTO));
-    if (resourceIdDTO.isEmpty()) {
-      var errorDTO =
-          new ApiErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR, String.format("Something went wrong"));
-      s3Service.delete(file.getOriginalFilename());
-      return new ResponseEntity<>(errorDTO, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    return ResponseEntity.ok(resourceIdDTO);
+    Optional<Mp3ResourceIdDTO> resourceIdDTO = s3Service.upload(file);
+    resourceIdDTO.map(Mp3ResourceIdDTO::getId)
+        .map(resourceId -> new Mp3ResourceInfoDTO(null,
+            resourceId, file.getSize()))
+        .ifPresent(mp3ResourceDBService::save);
+    resourceIdDTO.ifPresent(rabbitMQService::mp3ResourceUploadMessageSend);
+    return resourceIdDTO.map(ResponseEntity::ok)
+        .orElseThrow(() -> new RuntimeException("Something went wrong"));
   }
 
-  @DeleteMapping public ResponseEntity<?> delete(@RequestParam String id) {
+  // todo: update it
+  @DeleteMapping
+  public ResponseEntity<?> delete(@RequestParam String id) {
     Optional<ApiErrorDTO> error = validator.validate(id);
     if (error.isPresent()) {
       return ResponseEntity.badRequest()

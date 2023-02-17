@@ -1,0 +1,32 @@
+server:
+  port: 8081
+
+aws:
+  s3:
+    bucket: a-lautsou-mp3-resources
+  region: us-east-1
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  rabbitmq:
+    host: localhost
+    port: 15672
+    username: guest
+    password: guest
+    exchange: x.mp3-resource-upload
+    routingkey: rk.mp3-resource-upload
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/mp3resourcedb
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true

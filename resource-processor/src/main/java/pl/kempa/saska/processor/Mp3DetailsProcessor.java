@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.Random;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -11,24 +12,25 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.mp3.Mp3Parser;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.dto.Mp3DetailsDTO;
 
 @Component
+@Slf4j
 public class Mp3DetailsProcessor {
-  public Mp3DetailsDTO processMp3(MultipartFile file)
+  public Mp3DetailsDTO processMp3(InputStream inputStream, Integer resourceId)
       throws TikaException, IOException, SAXException {
-    InputStream inputStream = file.getInputStream();
     ContentHandler handler = new DefaultHandler();
     Metadata metadata = new Metadata();
     Parser parser = new Mp3Parser();
     ParseContext parseCtx = new ParseContext();
     parser.parse(inputStream, handler, metadata, parseCtx);
     inputStream.close();
+    exceptionSimulation();
 
     Optional<String> length = Optional.of(metadata.get("xmpDM:duration"))
         .map(Double::valueOf)
@@ -36,13 +38,20 @@ public class Mp3DetailsProcessor {
         .map(Duration::ofMillis)
         .map(d -> String.format("%d:%d", d.toMinutesPart(), d.toSecondsPart()));
     return Mp3DetailsDTO.builder()
-        .fileName(file.getOriginalFilename())
-        .fileSize(file.getSize())
+        .resourceId(resourceId)
         .title(metadata.get("title"))
         .artist(metadata.get("xmpDM:artist"))
         .album(metadata.get("xmpDM:album"))
         .length(length.orElse(null))
         .releaseDate(metadata.get("xmpDM:releaseDate"))
         .build();
+  }
+
+  private void exceptionSimulation() {
+    int random = new Random().nextInt(10) % 2;
+    if (random == 0) {
+      log.error("Some exception simulation");
+      throw new RuntimeException("Some exception simulation");
+    }
   }
 }

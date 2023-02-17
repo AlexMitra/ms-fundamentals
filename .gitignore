@@ -8,6 +8,10 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Docker ###
+data
+postgres-data
+
 ### STS ###
 .apt_generated
 .classpath
