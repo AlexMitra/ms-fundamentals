@@ -5,9 +5,5 @@ import org.springframework.data.repository.CrudRepository;
 import pl.kempa.saska.repository.model.SongInfo;
 
 public interface SongRepository extends CrudRepository<SongInfo, Integer> {
-  SongInfo findByTitle(String title);
-
-  SongInfo findByFileName(String fileName);
-
-  boolean existsByFileName(String fileName);
+  SongInfo findByResourceId(Integer resourceId);
 }

@@ -10,8 +10,7 @@ public class SongConverter {
   public SongInfoDTO toDTO(SongInfo entity) {
     return SongInfoDTO.builder()
         .id(entity.getId())
-        .fileName(entity.getFileName())
-        .fileSize(entity.getFileSize())
+        .resourceId(entity.getResourceId())
         .title(entity.getTitle())
         .artist(entity.getArtist())
         .album(entity.getAlbum())
@@ -22,8 +21,7 @@ public class SongConverter {
 
   public SongInfo toEntity(SongInfoDTO dto) {
     return SongInfo.builder()
-        .fileName(dto.getFileName())
-        .fileSize(dto.getFileSize())
+        .resourceId(dto.getResourceId())
         .title(dto.getTitle())
         .artist(dto.getArtist())
         .album(dto.getAlbum())

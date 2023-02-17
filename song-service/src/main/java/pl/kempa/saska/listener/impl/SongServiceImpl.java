@@ -1,8 +1,7 @@
-package pl.kempa.saska.service.impl;
+package pl.kempa.saska.listener.impl;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -14,7 +13,7 @@ import pl.kempa.saska.dto.SongIdDTO;
 import pl.kempa.saska.dto.SongInfoDTO;
 import pl.kempa.saska.repository.SongRepository;
 import pl.kempa.saska.repository.model.SongInfo;
-import pl.kempa.saska.service.SongService;
+import pl.kempa.saska.listener.SongService;
 
 @Service
 public class SongServiceImpl implements SongService {
@@ -40,22 +39,10 @@ public class SongServiceImpl implements SongService {
   }
 
   @Override
-  public Optional<SongInfoDTO> getByFileName(String fileName) {
-    var songInfoDTO = repository.findByFileName(fileName);
-    return Optional.ofNullable(songInfoDTO)
-        .map(converter::toDTO);
-  }
-
-  @Override
-  public boolean isExists(String fileName) {
-    return repository.existsByFileName(fileName);
-  }
-
-  @Override
   public SongIdDTO save(SongInfoDTO songInfoDTO) {
     repository.save(converter.toEntity(songInfoDTO));
-    SongInfo song = repository.findByTitle(songInfoDTO.getTitle());
-    return new SongIdDTO(song.getId());
+    SongInfo song = repository.findByResourceId(songInfoDTO.getResourceId());
+    return new SongIdDTO(song.getResourceId());
   }
 
   @Override

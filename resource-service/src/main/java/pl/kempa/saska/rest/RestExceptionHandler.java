@@ -52,4 +52,10 @@ public class RestExceptionHandler {
     var errorDTO = new ApiErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
     return new ResponseEntity(errorDTO, new HttpHeaders(), errorDTO.getStatus());
   }
+
+  @ExceptionHandler({RuntimeException.class})
+  public ResponseEntity<ApiErrorDTO> handleRuntimeException(IOServiceException e) {
+    var errorDTO = new ApiErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+    return new ResponseEntity(errorDTO, new HttpHeaders(), errorDTO.getStatus());
+  }
 }

@@ -10,8 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Mp3DetailsDTO {
-    private String fileName;
-    private long fileSize;
+    private Integer resourceId;
     private String title;
     private String artist;
     private String album;

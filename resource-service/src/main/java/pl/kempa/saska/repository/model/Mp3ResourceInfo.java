@@ -16,17 +16,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "tblsonginfo")
-public class SongInfo {
+@Table(name = "tblmp3resourceinfo")
+public class Mp3ResourceInfo {
   @Id
   @GeneratedValue
   private Integer id;
+
   @Column(name = "resourceid")
   private Integer resourceId;
-  private String title;
-  private String artist;
-  private String album;
-  private String length;
-  @Column(name = "releasedate")
-  private String releaseDate;
+
+  @Column(name = "filesize")
+  private Long fileSize;
 }

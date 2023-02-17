@@ -10,13 +10,13 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 @Configuration
 public class S3Config {
 
-    @Value("${aws.region}")
-    private String region;
+  @Value("${aws.region}")
+  private String region;
 
-    @Bean
-    public AmazonS3 s3client() {
-        return AmazonS3ClientBuilder.standard()
-                .withRegion(region)
-                .build();
-    }
+  @Bean
+  public AmazonS3 s3client() {
+    return AmazonS3ClientBuilder.standard()
+        .withRegion(region)
+        .build();
+  }
 }

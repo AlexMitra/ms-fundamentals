@@ -1,5 +1,7 @@
 package pl.kempa.saska.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,10 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Mp3ResourceInfoDTO {
-
-  private Integer id;
-  private Integer resourceId;
-  private Long fileSize;
-
+public class Mp3ResourceS3InfoDTO {
+	private String name;
+	private Long size;
+	private LocalDateTime lastModified;
 }
