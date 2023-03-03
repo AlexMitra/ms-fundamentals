@@ -13,20 +13,26 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.dto.SongIdDTO;
 import pl.kempa.saska.dto.SongInfoDTO;
-import pl.kempa.saska.listener.SongService;
+import pl.kempa.saska.service.SongService;
 
 @RestController
 @RequestMapping(value = "/api/songs")
+@Slf4j
 public class SongController {
 
-  @Autowired
-  SongService songService;
+  private SongService songService;
 
-  @GetMapping(value = "/{id}")
-  public ResponseEntity<?> getById(@PathVariable Integer id) {
-    Optional<SongInfoDTO> songInfoDTO = songService.getById(id);
+  @Autowired
+  public SongController(SongService songService) {
+    this.songService = songService;
+  }
+
+  @GetMapping(value = "/{resourceId}")
+  public ResponseEntity<?> getByResourceId(@PathVariable Integer resourceId) {
+    Optional<SongInfoDTO> songInfoDTO = songService.getByResourceId(resourceId);
     if (songInfoDTO.isEmpty()) {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
@@ -35,7 +41,8 @@ public class SongController {
 
   @PostMapping
   public ResponseEntity<SongIdDTO> save(@RequestBody SongInfoDTO songInfoDTO) {
-    return ResponseEntity.ok(songService.save(songInfoDTO));
+    SongIdDTO dto = songService.save(songInfoDTO);
+    return ResponseEntity.ok(dto);
   }
 
   @DeleteMapping(value = "/{id}")

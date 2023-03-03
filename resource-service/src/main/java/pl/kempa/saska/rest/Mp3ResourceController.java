@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.MediaType;
@@ -22,34 +24,37 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import lombok.AllArgsConstructor;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+
 import pl.kempa.saska.dto.ApiErrorDTO;
 import pl.kempa.saska.dto.Mp3ResourceDetailsDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdListDTO;
 import pl.kempa.saska.dto.Mp3ResourceInfoDTO;
 import pl.kempa.saska.dto.Mp3ResourceS3InfoDTO;
-import pl.kempa.saska.listener.Mp3ResourceDBService;
-import pl.kempa.saska.listener.Mp3ResourceS3Service;
-import pl.kempa.saska.listener.RabbitMQService;
+import pl.kempa.saska.service.Mp3ResourceDBService;
+import pl.kempa.saska.service.Mp3ResourceS3Service;
+import pl.kempa.saska.service.RabbitMQService;
 import pl.kempa.saska.rest.exception.IncorrectIdParamException;
 import pl.kempa.saska.rest.util.WebClientUtil;
 import pl.kempa.saska.rest.validator.Mp3ResourceValidator;
 
 @RestController
 @RequestMapping(value = "/api/resources")
-@AllArgsConstructor
 public class Mp3ResourceController {
 
-  private Mp3ResourceS3Service s3Service;
-  private Mp3ResourceDBService mp3ResourceDBService;
-  private Mp3ResourceValidator validator;
-  private WebClientUtil webClientUtil;
-  private RabbitMQService rabbitMQService;
+  @Autowired private Mp3ResourceS3Service s3Service;
+  @Autowired private Mp3ResourceDBService mp3ResourceDBService;
+  @Autowired private Mp3ResourceValidator validator;
+  @Autowired private WebClientUtil webClientUtil;
+  @Autowired private RabbitMQService rabbitMQService;
+  @Value("${aws.s3.bucket}") private String bucketName;
 
   @GetMapping
-  public ResponseEntity<List<Mp3ResourceS3InfoDTO>> getALl() {
-    return ResponseEntity.ok(s3Service.getAll());
+  public ResponseEntity<List<Mp3ResourceS3InfoDTO>> getAll() {
+    ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName);
+    return ResponseEntity.ok(s3Service.getAll(listObjectsRequest));
   }
 
   @GetMapping("/{id}")
@@ -57,7 +62,8 @@ public class Mp3ResourceController {
                                         @RequestHeader HttpHeaders headers)
       throws IOException {
     List<HttpRange> ranges = headers.getRange();
-    InputStream inputStream = s3Service.download(id, ranges);
+    GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, id.toString());
+    InputStream inputStream = s3Service.download(getObjectRequest, ranges);
     return ResponseEntity.ok()
         .contentType(MediaType.APPLICATION_OCTET_STREAM)
         .body(inputStream.readAllBytes());
@@ -70,10 +76,9 @@ public class Mp3ResourceController {
       return ResponseEntity.badRequest()
           .body(error.get());
     }
-    Optional<Mp3ResourceIdDTO> resourceIdDTO = s3Service.upload(file);
+    Optional<Mp3ResourceIdDTO> resourceIdDTO = s3Service.upload(file, bucketName);
     resourceIdDTO.map(Mp3ResourceIdDTO::getId)
-        .map(resourceId -> new Mp3ResourceInfoDTO(null,
-            resourceId, file.getSize()))
+        .map(resourceId -> new Mp3ResourceInfoDTO(null, resourceId, file.getSize()))
         .ifPresent(mp3ResourceDBService::save);
     resourceIdDTO.ifPresent(rabbitMQService::mp3ResourceUploadMessageSend);
     return resourceIdDTO.map(ResponseEntity::ok)
@@ -97,7 +102,8 @@ public class Mp3ResourceController {
           .map(i -> {
             Optional<Mp3ResourceDetailsDTO> mp3DetailsDTO =
                 Optional.ofNullable(webClientUtil.callDeleteMp3Details(i));
-            mp3DetailsDTO.ifPresent(detailsDTO -> s3Service.delete(detailsDTO.getFileName()));
+            mp3DetailsDTO.ifPresent(
+                detailsDTO -> s3Service.delete(detailsDTO.getFileName(), bucketName));
             return mp3DetailsDTO;
           })
           .filter(Optional::isPresent)
