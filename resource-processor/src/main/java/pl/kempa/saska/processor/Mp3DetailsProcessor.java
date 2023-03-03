@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.Random;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -30,7 +29,6 @@ public class Mp3DetailsProcessor {
     ParseContext parseCtx = new ParseContext();
     parser.parse(inputStream, handler, metadata, parseCtx);
     inputStream.close();
-    exceptionSimulation();
 
     Optional<String> length = Optional.of(metadata.get("xmpDM:duration"))
         .map(Double::valueOf)
@@ -45,13 +43,5 @@ public class Mp3DetailsProcessor {
         .length(length.orElse(null))
         .releaseDate(metadata.get("xmpDM:releaseDate"))
         .build();
-  }
-
-  private void exceptionSimulation() {
-    int random = new Random().nextInt(10) % 2;
-    if (random == 0) {
-      log.error("Some exception simulation");
-      throw new RuntimeException("Some exception simulation");
-    }
   }
 }

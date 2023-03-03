@@ -12,4 +12,8 @@ public class Mp3DetailsNotFoundException extends RuntimeException {
   public Mp3DetailsNotFoundException(String message) {
     super(message);
   }
+
+  public Mp3DetailsNotFoundException(String message, Throwable cause) {
+    super(message, cause);
+  }
 }
