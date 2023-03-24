@@ -14,7 +14,8 @@ public class ResourceIdGenerator {
         new StringBuilder(fileName).append(System.currentTimeMillis())
             .append(UUID.randomUUID())
             .toString();
-    return convertStringToId(sourceComplexString);
+    int resourceId = convertStringToId(sourceComplexString);
+    return resourceId < 0 ? -1 * resourceId : resourceId;
   }
 
   private int convertStringToId(String str) {

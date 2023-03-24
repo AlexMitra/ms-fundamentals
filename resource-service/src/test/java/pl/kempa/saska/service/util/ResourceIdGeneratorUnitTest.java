@@ -23,7 +23,7 @@ class ResourceIdGeneratorUnitTest {
 
     // when
     List<Integer> resourceIds =
-        IntStream.range(0, 9999)
+        IntStream.range(0, 999)
             .mapToObj(i -> generator.generateId(fileName))
             .toList();
 

@@ -1,0 +1,48 @@
+version: '3.9'
+services:
+  ## Resource Service DB
+  postgres-mp3resource:
+    container_name: postgres-mp3resource
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: mp3ResourceDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-mp3resource:/var/lib/postgresql/data
+      - ./sql/mp3resourcedb_init.sql:/docker-entrypoint-initdb.d/mp3resourcedb_init.sql
+    expose:
+      - ${MP3_RESOURCE_DB_PORT}
+    ports:
+      - ${MP3_RESOURCE_DB_PORT}:5432
+    restart: always
+
+  ## Song Service DB
+  postgres-songs:
+    container_name: postgres-songs
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: songsDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-songs:/var/lib/postgresql/data
+      - ./sql/songsdb_init.sql:/docker-entrypoint-initdb.d/songsdb_init.sql
+    expose:
+      - ${SONGS_DB_PORT}
+    ports:
+      - ${SONGS_DB_PORT}:5432
+    restart: always
+
+  ## Message Broker
+  rabbitmq:
+    container_name: rabbitmq
+    image: ${RABBITMQ_IMAGE}
+    ports:
+      - "5672:5672" #JMS Port
+      - "15672:15672" #Management Port - default user:pass = guest:guest
+
+volumes:
+  postgres-mp3resource:
+  postgres-songs:
+

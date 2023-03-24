@@ -1,16 +1,94 @@
-version: '3'
+version: '3.9'
 services:
+  ## Resource Service DB
+  postgres-mp3resource:
+    container_name: postgres-mp3resource
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: mp3ResourceDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-mp3resource:/var/lib/postgresql/data
+      - ./sql/mp3resourcedb_init.sql:/docker-entrypoint-initdb.d/mp3resourcedb_init.sql
+    expose:
+      - ${MP3_RESOURCE_DB_PORT}
+    ports:
+      - ${MP3_RESOURCE_DB_PORT}:5432
+    restart: always
+
+  ## Song Service DB
+  postgres-songs:
+    container_name: postgres-songs
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: songsDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-songs:/var/lib/postgresql/data
+      - ./sql/songsdb_init.sql:/docker-entrypoint-initdb.d/songsdb_init.sql
+    expose:
+      - ${SONGS_DB_PORT}
+    ports:
+      - ${SONGS_DB_PORT}:5432
+    restart: always
+
+  ## Message Broker
   rabbitmq:
     container_name: rabbitmq
-    image: rabbitmq:management
+    image: ${RABBITMQ_IMAGE}
     ports:
-      - "5672:5672"
-      - "15672:15672"
-  postgres:
-    image: postgres
-    restart: always
+      - "5672:5672" #JMS Port
+      - "15672:15672" #Management Port - default user:pass = guest:guest
+
+  ## Resource Service App
+  resource-service:
+    image: resource-service-image
     ports:
-      - "5432:5432"
+      - ${MP3_RESOURCE_SERVICE_PORT}:8080
     environment:
-      - POSTGRES_PASSWORD=root
-      - POSTGRES_USER=root
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_DATASOURCE_URL: ${MP3_RESOURCE_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      AWS_PROFILE: "default"
+    volumes:
+      - /c/Users/UX508545/.aws:/root/.aws/:ro
+    depends_on:
+      - postgres-mp3resource
+      - rabbitmq
+
+  ## Resource Processor App
+  resource-processor:
+    image: resource-processor-image
+    ports:
+      - ${MP3_RESOURCE_PROCESSOR_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    depends_on:
+      - rabbitmq
+
+  ## Song Service App
+  song-service:
+    image: song-service-image
+    ports:
+      - ${MP3_SONG_SERVICE_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_DATASOURCE_URL: ${SONGS_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      - postgres-songs
+
+volumes:
+  postgres-mp3resource:
+  postgres-songs:
+

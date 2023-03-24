@@ -27,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 
+import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.dto.ApiErrorDTO;
 import pl.kempa.saska.dto.Mp3ResourceDetailsDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
@@ -42,6 +43,7 @@ import pl.kempa.saska.rest.validator.Mp3ResourceValidator;
 
 @RestController
 @RequestMapping(value = "/api/resources")
+@Slf4j
 public class Mp3ResourceController {
 
   @Autowired private Mp3ResourceS3Service s3Service;
@@ -77,6 +79,7 @@ public class Mp3ResourceController {
           .body(error.get());
     }
     Optional<Mp3ResourceIdDTO> resourceIdDTO = s3Service.upload(file, bucketName);
+    log.info(file.getName() + " was uploaded to S3!!!");
     resourceIdDTO.map(Mp3ResourceIdDTO::getId)
         .map(resourceId -> new Mp3ResourceInfoDTO(null, resourceId, file.getSize()))
         .ifPresent(mp3ResourceDBService::save);

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import pl.kempa.saska.dto.Mp3DetailsDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 
-@FeignClient(value = "song-service-api", url = "http://localhost:8082/api/songs")
+@FeignClient(value = "song-service-api", url = "${feign.client.url.song-service}")
 public interface SongsApiClient {
 
   @RequestMapping(method = RequestMethod.POST)
