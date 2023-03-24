@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-@FeignClient(value = "resource-service-api-client", url = "http://localhost:8081/api/resources/")
+@FeignClient(value = "resource-service-api-client", url = "${feign.client.url.resource-service}")
 public interface ResourcesApiClient {
 
   @RequestMapping(method = RequestMethod.GET, value = "/{resourceId}")
