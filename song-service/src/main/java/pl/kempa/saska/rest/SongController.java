@@ -23,7 +23,7 @@ import pl.kempa.saska.service.SongService;
 @Slf4j
 public class SongController {
 
-  private SongService songService;
+  @Autowired private SongService songService;
 
   @Autowired
   public SongController(SongService songService) {
@@ -41,6 +41,8 @@ public class SongController {
 
   @PostMapping
   public ResponseEntity<SongIdDTO> save(@RequestBody SongInfoDTO songInfoDTO) {
+    // SERVICE_VERSION is just for client load balancing testing purpose
+    log.info("Song service version: " + System.getenv("SERVICE_VERSION"));
     SongIdDTO dto = songService.save(songInfoDTO);
     return ResponseEntity.ok(dto);
   }

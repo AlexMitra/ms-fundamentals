@@ -42,6 +42,26 @@ services:
       - "5672:5672" #JMS Port
       - "15672:15672" #Management Port - default user:pass = guest:guest
 
+  ## Eureka Server
+  service-discovery:
+    container_name: service-discovery
+    image: service-discovery-image
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+
+  ## API Gateway
+  api-gateway:
+    container_name: api-gateway
+    image: api-gateway-image
+    ports:
+      - ${API_GATEWAY_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+    depends_on:
+      - service-discovery
+
   ## Resource Service App
   resource-service:
     image: resource-service-image
@@ -61,6 +81,8 @@ services:
     depends_on:
       - postgres-mp3resource
       - rabbitmq
+      - service-discovery
+      - api-gateway
 
   ## Resource Processor App
   resource-processor:
@@ -74,9 +96,12 @@ services:
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
     depends_on:
       - rabbitmq
+      - service-discovery
+      - api-gateway
 
-  ## Song Service App
+  ## Song Service App N1
   song-service:
+    container_name: song-service-1
     image: song-service-image
     ports:
       - ${MP3_SONG_SERVICE_PORT}:8080
@@ -85,8 +110,28 @@ services:
       SPRING_DATASOURCE_URL: ${SONGS_DB_URL}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVICE_VERSION: "song-service-1"
     depends_on:
       - postgres-songs
+      - service-discovery
+      - api-gateway
+
+  ## Song Service App N2 for Client-Side Balancing testing
+  song-service-2:
+    container_name: song-service-2
+    image: song-service-image
+    ports:
+      - ${MP3_SONG_SERVICE_2_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_DATASOURCE_URL: ${SONGS_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVICE_VERSION: "song-service-2"
+    depends_on:
+      - postgres-songs
+      - service-discovery
+      - api-gateway
 
 volumes:
   postgres-mp3resource:

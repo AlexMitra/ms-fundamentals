@@ -6,7 +6,3 @@ allprojects {
 	apply plugin: 'base'
 	apply plugin: 'idea'
 }
-
-//dependencies {
-//	implementation 'org.springframework.boot:spring-boot-starter-parent:2.7.8'
-//}
