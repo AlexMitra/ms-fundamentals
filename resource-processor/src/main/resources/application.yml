@@ -12,10 +12,10 @@ spring:
     queue: q.mp3-resource-upload
   codec:
     max-in-memory-size: 10MB
+  application:
+    name: resource-processor
 
-
-feign:
+eureka:
   client:
-    url:
-      resource-service: http://localhost:8081/api/resources/
-      song-service: http://localhost:8082/api/songs
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka

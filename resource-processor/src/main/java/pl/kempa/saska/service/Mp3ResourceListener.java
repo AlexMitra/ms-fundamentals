@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.apache.tika.exception.TikaException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
@@ -23,6 +24,7 @@ import pl.kempa.saska.processor.Mp3DetailsProcessor;
 public class Mp3ResourceListener {
 
   private Mp3DetailsProcessor processor;
+  @LoadBalanced
   private SongsApiClient songsApiClient;
   private ResourcesApiClient resourcesApiClient;
   private RetryTemplate retryTemplate;
@@ -30,18 +32,13 @@ public class Mp3ResourceListener {
   @RabbitListener(queues = "${spring.rabbitmq.queue}")
   public void onMp3ResourceUpload(Mp3ResourceIdDTO resourceIdDTO)
       throws TikaException, IOException, SAXException {
-    byte[] mp3Resource = retryTemplate.execute(context -> {
-      log.info("call Get Mp3Resource attempt!");
-      return resourcesApiClient.getMp3Resource(resourceIdDTO.getId()
-          .toString());
-    });
+    byte[] mp3Resource = retryTemplate.execute(context -> resourcesApiClient.getMp3Resource(
+        resourceIdDTO.getId()
+            .toString()));
     Mp3DetailsDTO mp3DetailsDTO =
         processor.processMp3(new ByteArrayInputStream(mp3Resource), resourceIdDTO.getId());
     Mp3ResourceIdDTO mp3ResourceIdDTO =
-        retryTemplate.execute(context -> {
-          log.info("call Save Mp3Details attempt!");
-          return songsApiClient.saveMp3Details(mp3DetailsDTO);
-        });
+        retryTemplate.execute(context -> songsApiClient.saveMp3Details(mp3DetailsDTO));
     log.info("Details were saved for Mp3Resource with resourceId=" + mp3ResourceIdDTO.getId());
   }
 }

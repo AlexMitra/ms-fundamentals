@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        ## RESOURCE SERVICE
+        - id: mp3-resource-service
+          uri: lb://resource-service
+          predicates:
+            - Path=/api/resources/**
+        ## SONG SERVICE
+        - id: song-service
+          uri: lb://song-service
+          predicates:
+            - Path=/api/songs/**
+        ## SERVICE DISCOVERY
+        - id: service-discovery
+          uri: http://service-discovery:8761
+          predicates:
+            - Path=/eureka
+          filters:
+            - SetPath=/
+        ## SERVICE DISCOVERY STYLES
+        - id: service-discovery-styles
+          uri: http://service-discovery:8761
+          predicates:
+            - Path=/eureka/**
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://service-discovery:8761/eureka
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: INFO
+    org.springframework.cloud.gateway: TRACE
+
