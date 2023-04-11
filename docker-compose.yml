@@ -110,24 +110,6 @@ services:
       SPRING_DATASOURCE_URL: ${SONGS_DB_URL}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SERVICE_VERSION: "song-service-1"
-    depends_on:
-      - postgres-songs
-      - service-discovery
-      - api-gateway
-
-  ## Song Service App N2 for Client-Side Balancing testing
-  song-service-2:
-    container_name: song-service-2
-    image: song-service-image
-    ports:
-      - ${MP3_SONG_SERVICE_2_PORT}:8080
-    environment:
-      SPRING_PROFILES_ACTIVE: "docker"
-      SPRING_DATASOURCE_URL: ${SONGS_DB_URL}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SERVICE_VERSION: "song-service-2"
     depends_on:
       - postgres-songs
       - service-discovery
