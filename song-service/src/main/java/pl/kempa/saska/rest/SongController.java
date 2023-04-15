@@ -41,8 +41,6 @@ public class SongController {
 
   @PostMapping
   public ResponseEntity<SongIdDTO> save(@RequestBody SongInfoDTO songInfoDTO) {
-    // SERVICE_VERSION is just for client load balancing testing purpose
-    log.info("Song service version: " + System.getenv("SERVICE_VERSION"));
     SongIdDTO dto = songService.save(songInfoDTO);
     return ResponseEntity.ok(dto);
   }
