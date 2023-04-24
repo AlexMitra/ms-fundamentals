@@ -16,10 +16,10 @@ public class RabbitMQServiceImpl implements RabbitMQService {
   @Autowired
   private RabbitTemplate rabbitTemplate;
 
-  @Value("${spring.rabbitmq.exchange}")
+  @Value("${spring.rabbitmq.exchange.resource-uploaded}")
   private String exchange;
 
-  @Value("${spring.rabbitmq.routingkey}")
+  @Value("${spring.rabbitmq.routingkey.resource-uploaded}")
   private String routingkey;
 
   @Override

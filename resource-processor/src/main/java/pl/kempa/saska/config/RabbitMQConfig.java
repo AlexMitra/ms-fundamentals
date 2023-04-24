@@ -31,24 +31,24 @@ public class RabbitMQConfig {
   @Value("${spring.rabbitmq.password}")
   private String password;
 
-  @Value("${spring.rabbitmq.exchange}")
-  private String exchange;
+  @Value("${spring.rabbitmq.exchange.resource-uploaded}")
+  private String resourceUploadedEx;
 
-  @Value("${spring.rabbitmq.routingkey}")
-  private String routingKey;
+  @Value("${spring.rabbitmq.routingkey.resource-uploaded}")
+  private String resourceUploadedRK;
 
-  @Value("${spring.rabbitmq.queue}")
-  private String queue;
+  @Value("${spring.rabbitmq.queue.resource-uploaded}")
+  private String resourceUploadedQ;
 
 
   @Bean
   Queue mp3UploadNotificationQueue() {
-    return new Queue(queue, true);
+    return new Queue(resourceUploadedQ, true);
   }
 
   @Bean
   Exchange mp3UploadNotificationExchange() {
-    return ExchangeBuilder.directExchange(exchange)
+    return ExchangeBuilder.directExchange(resourceUploadedEx)
         .durable(true)
         .build();
   }
@@ -58,7 +58,7 @@ public class RabbitMQConfig {
     return BindingBuilder
         .bind(mp3UploadNotificationQueue())
         .to(mp3UploadNotificationExchange())
-        .with(routingKey)
+        .with(resourceUploadedRK)
         .noargs();
   }
 

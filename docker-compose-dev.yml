@@ -1,5 +1,22 @@
 version: '3.9'
 services:
+  ## Storage Service DB
+  postgres-storages:
+    container_name: postgres-storages
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: storagesDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-storages:/var/lib/postgresql/data
+      - ./sql/storagesdb_init.sql:/docker-entrypoint-initdb.d/storagesdb_init.sql
+    expose:
+      - ${STORAGES_DB_PORT}
+    ports:
+      - ${STORAGES_DB_PORT}:5432
+    restart: always
+    
   ## Resource Service DB
   postgres-mp3resource:
     container_name: postgres-mp3resource
@@ -45,4 +62,5 @@ services:
 volumes:
   postgres-mp3resource:
   postgres-songs:
+  postgres-storages:
 

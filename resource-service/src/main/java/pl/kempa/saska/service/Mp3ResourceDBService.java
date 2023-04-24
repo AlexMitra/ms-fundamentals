@@ -13,5 +13,7 @@ public interface Mp3ResourceDBService {
 
   void save(Mp3ResourceInfoDTO mp3ResourceInfoDTO);
 
+  void update(Mp3ResourceInfoDTO mp3ResourceInfoDTO);
+
   Optional<Mp3ResourceInfoDTO> delete(Integer resourceId);
 }

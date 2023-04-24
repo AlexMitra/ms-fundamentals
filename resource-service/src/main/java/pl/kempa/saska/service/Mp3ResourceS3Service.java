@@ -12,13 +12,14 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 import pl.kempa.saska.dto.Mp3ResourceS3InfoDTO;
+import pl.kempa.saska.dto.StorageDTO;
 
 public interface Mp3ResourceS3Service {
   List<Mp3ResourceS3InfoDTO> getAll(ListObjectsRequest listObjectsRequest);
 
   InputStream download(GetObjectRequest getObjectRequest, List<HttpRange> ranges);
 
-  Optional<Mp3ResourceIdDTO> upload(MultipartFile mp3Resource, String bucketName);
+  Optional<Mp3ResourceIdDTO> upload(MultipartFile mp3Resource, StorageDTO storageDTO);
 
   void delete(String fileName, String bucketName);
 }
