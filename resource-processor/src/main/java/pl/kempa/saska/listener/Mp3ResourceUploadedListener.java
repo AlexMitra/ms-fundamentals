@@ -8,7 +8,6 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.xml.sax.SAXException;
 
 import lombok.AllArgsConstructor;

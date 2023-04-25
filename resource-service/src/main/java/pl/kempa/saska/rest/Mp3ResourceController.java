@@ -1,5 +1,7 @@
 package pl.kempa.saska.rest;
 
+import static pl.kempa.saska.dto.StorageType.STAGING;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -8,13 +10,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,16 +27,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.services.s3.model.GetObjectRequest;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.dto.ApiErrorDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 import pl.kempa.saska.dto.Mp3ResourceIdListDTO;
 import pl.kempa.saska.dto.Mp3ResourceInfoDTO;
 import pl.kempa.saska.dto.StorageDTO;
-import pl.kempa.saska.dto.StorageType;
 import pl.kempa.saska.feign.client.SongsApiClient;
-import pl.kempa.saska.feign.client.StoragesApiClient;
 import pl.kempa.saska.rest.exception.IncorrectIdParamException;
+import pl.kempa.saska.rest.util.WebClientUtil;
 import pl.kempa.saska.rest.validator.Mp3ResourceValidator;
 import pl.kempa.saska.service.Mp3ResourceDBService;
 import pl.kempa.saska.service.Mp3ResourceS3Service;
@@ -45,15 +45,15 @@ import pl.kempa.saska.service.RabbitMQService;
 @RestController
 @RequestMapping(value = "/api/resources")
 @Slf4j
+@AllArgsConstructor
 public class Mp3ResourceController {
 
-  @Autowired private Mp3ResourceS3Service s3Service;
-  @Autowired private Mp3ResourceDBService mp3ResourceDBService;
-  @Autowired private Mp3ResourceValidator validator;
-  @Autowired private RabbitMQService rabbitMQService;
-  @Autowired private StoragesApiClient storagesApiClient;
-  @Autowired private SongsApiClient songsApiClient;
-  @Autowired private RetryTemplate retryTemplate;
+  private Mp3ResourceS3Service s3Service;
+  private Mp3ResourceDBService mp3ResourceDBService;
+  private Mp3ResourceValidator validator;
+  private RabbitMQService rabbitMQService;
+  private SongsApiClient songsApiClient;
+  private WebClientUtil webClientUtil;
 
   @GetMapping
   public ResponseEntity<List<Mp3ResourceInfoDTO>> getAll() {
@@ -70,7 +70,7 @@ public class Mp3ResourceController {
           .build();
     }
     Optional<StorageDTO> storageDTO = resourceInfoDTO.map(Mp3ResourceInfoDTO::getStorageId)
-        .map(storagesApiClient::getStoragesById);
+        .map(webClientUtil::callGetStoragesById);
     if (resourceInfoDTO.isEmpty()) {
       return ResponseEntity.internalServerError()
           .body(new ApiErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR, "Storage for the resource can't be found"));
@@ -92,7 +92,7 @@ public class Mp3ResourceController {
           .body(error.get());
     }
     // 1) get STAGING storage info
-    var stagingStorageOpt = storagesApiClient.getStoragesByType(StorageType.STAGING.name())
+    var stagingStorageOpt = webClientUtil.callGetStoragesByType(STAGING)
         .stream()
         .findFirst();
     if (stagingStorageOpt.isEmpty()) {
@@ -132,12 +132,12 @@ public class Mp3ResourceController {
           .map(Optional::get)
           .map(resourceInfoDTO -> {
             // 2) delete from S3
-            var storage = storagesApiClient.getStoragesById(resourceInfoDTO.getStorageId());
+            var storage = webClientUtil.callGetStoragesById(resourceInfoDTO.getStorageId());
             String key = storage.getPath()
                 .concat(resourceInfoDTO.getResourceId()
                     .toString());
             s3Service.delete(key, storage.getBucket());
-            // 3) delete delete in song service with retryTemplate
+            // 3) delete in song service
             songsApiClient.deleteMp3Details(resourceInfoDTO.getResourceId());
             // 4) delete from DB
             mp3ResourceDBService.delete(resourceInfoDTO.getResourceId());

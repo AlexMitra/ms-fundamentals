@@ -82,6 +82,11 @@ public class StorageServiceImpl implements StorageService {
         throw new RuntimeException(e);
       }
     }
+    var storageType = storageDTO.getStorageType()
+        .name();
+    if (s3Client.doesBucketExistV2(storageDTO.getBucket()) && !repository.existsByStorageType(storageType)) {
+      repository.save(converter.toEntity(storageDTO));
+    }
     return Optional.empty();
   }
 

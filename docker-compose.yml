@@ -1,5 +1,22 @@
 version: '3.9'
 services:
+  ## Storage Service DB
+  postgres-storages:
+    container_name: postgres-storages
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: storagesDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-storages:/var/lib/postgresql/data
+      - ./sql/storagesdb_init.sql:/docker-entrypoint-initdb.d/storagesdb_init.sql
+    expose:
+      - ${STORAGES_DB_PORT}
+    ports:
+      - ${STORAGES_DB_PORT}:5432
+    restart: always
+
   ## Resource Service DB
   postgres-mp3resource:
     container_name: postgres-mp3resource
@@ -62,6 +79,27 @@ services:
     depends_on:
       - service-discovery
 
+  ## Storage Service App
+  storage-service:
+    image: storage-service-image
+    ports:
+      - ${MP3_STORAGE_SERVICE_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_DATASOURCE_URL: ${STORAGES_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      AWS_PROFILE: "default"
+    volumes:
+      - /c/Users/UX508545/.aws:/root/.aws/:ro
+    depends_on:
+      - postgres-storages
+      - service-discovery
+      - api-gateway
+
   ## Resource Service App
   resource-service:
     image: resource-service-image
@@ -83,6 +121,7 @@ services:
       - rabbitmq
       - service-discovery
       - api-gateway
+      - storage-service
 
   ## Resource Processor App
   resource-processor:

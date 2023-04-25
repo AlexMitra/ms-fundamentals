@@ -1,5 +1,7 @@
 package pl.kempa.saska.listener;
 
+import static pl.kempa.saska.dto.StorageType.PERMANENT;
+
 import java.util.Optional;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -15,8 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 import pl.kempa.saska.dto.Mp3ResourceInfoDTO;
 import pl.kempa.saska.dto.StorageDTO;
-import pl.kempa.saska.dto.StorageType;
-import pl.kempa.saska.feign.client.StoragesApiClient;
+import pl.kempa.saska.rest.util.WebClientUtil;
 import pl.kempa.saska.service.Mp3ResourceDBService;
 
 @Component
@@ -25,7 +26,7 @@ import pl.kempa.saska.service.Mp3ResourceDBService;
 public class Mp3ResourceProcessedListener {
 
   private Mp3ResourceDBService mp3ResourceDBService;
-  private StoragesApiClient storagesApiClient;
+  private WebClientUtil webClientUtil;
   private AmazonS3 s3Client;
 
   @RabbitListener(queues = "${spring.rabbitmq.queue.resource-processed}")
@@ -33,8 +34,8 @@ public class Mp3ResourceProcessedListener {
     // 1) get Info about current and PERMANENT storages
     var resourceInfoOpt = mp3ResourceDBService.getByResourceId(resourceIdDTO.getId());
     var currentStorage = resourceInfoOpt.map(Mp3ResourceInfoDTO::getStorageId)
-        .map(storagesApiClient::getStoragesById);
-    var permanentStorage = storagesApiClient.getStoragesByType(StorageType.PERMANENT.name())
+        .map(webClientUtil::callGetStoragesById);
+    var permanentStorage = webClientUtil.callGetStoragesByType(PERMANENT)
         .stream()
         .findFirst();
     if (currentStorage.isEmpty() || permanentStorage.isEmpty()) {
@@ -52,7 +53,8 @@ public class Mp3ResourceProcessedListener {
         .ifPresent(sId -> {
           resourceInfoDTO.setStorageId(sId);
           mp3ResourceDBService.update(resourceInfoDTO);
-          log.info("Storage was changed to PERMANENT {}", permanentStorage.get().getBucket());
+          log.info("Storage was changed to PERMANENT {}", permanentStorage.get()
+              .getBucket());
         });
   }
 
