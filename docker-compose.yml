@@ -157,4 +157,5 @@ services:
 volumes:
   postgres-mp3resource:
   postgres-songs:
+  postgres-storages:
 
