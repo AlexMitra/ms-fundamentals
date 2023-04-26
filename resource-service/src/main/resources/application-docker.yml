@@ -1,7 +1,9 @@
 server:
-  port: 8081
+  port: 8080
 
 aws:
+  s3:
+    bucket: a-lautsou-mp3-resources
   region: us-east-1
 
 spring:
@@ -10,10 +12,6 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
   rabbitmq:
-    host: localhost
-    port: 15672
-    username: guest
-    password: guest
     exchange:
       resource-uploaded: x.mp3-resource-uploaded
       resource-processed: x.mp3-resource-processed
@@ -24,9 +22,6 @@ spring:
       resource-processed: q.mp3-resource-processed
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5001/mp3ResourceDB
-    username: root
-    password: root
   jpa:
     hibernate:
       ddl-auto: update
@@ -41,7 +36,7 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://service-discovery:8761/eureka
 
 management:
   health:

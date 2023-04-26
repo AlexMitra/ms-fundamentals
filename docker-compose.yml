@@ -140,7 +140,6 @@ services:
 
   ## Song Service App N1
   song-service:
-    container_name: song-service-1
     image: song-service-image
     ports:
       - ${MP3_SONG_SERVICE_PORT}:8080

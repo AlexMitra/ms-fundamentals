@@ -1,6 +1,3 @@
-server:
-  port: 8888
-
 spring:
   application:
     name: api-gateway
@@ -24,21 +21,21 @@ spring:
             - Path=/api/songs/**
         ## SERVICE DISCOVERY
         - id: service-discovery
-          uri: http://localhost:8761
+          uri: http://service-discovery:8761
           predicates:
             - Path=/eureka
           filters:
             - SetPath=/
         ## SERVICE DISCOVERY STYLES
         - id: service-discovery-styles
-          uri: http://localhost:8761
+          uri: http://service-discovery:8761
           predicates:
             - Path=/eureka/**
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://service-discovery:8761/eureka
 
 logging:
   level:

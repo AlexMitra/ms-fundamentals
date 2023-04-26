@@ -1,12 +1,8 @@
 server:
-  port: 8083
+  port: 8080
 
 spring:
   rabbitmq:
-    host: localhost
-    port: 15672
-    username: guest
-    password: guest
     exchange:
       resource-uploaded: x.mp3-resource-uploaded
       resource-processed: x.mp3-resource-processed
@@ -23,4 +19,4 @@ spring:
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://service-discovery:8761/eureka
