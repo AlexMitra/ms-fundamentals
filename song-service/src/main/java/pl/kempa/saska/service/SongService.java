@@ -11,7 +11,7 @@ public interface SongService {
 
     Optional<SongInfoDTO> getByResourceId(Integer resourceId);
 
-    SongIdDTO save(SongInfoDTO songInfoDTO);
+    Optional<SongIdDTO> save(SongInfoDTO songInfoDTO);
 
-    Optional<SongInfoDTO> delete(Integer id);
+    Optional<SongInfoDTO> deleteByResourceId(Integer resourceId);
 }

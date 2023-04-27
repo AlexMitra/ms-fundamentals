@@ -7,9 +7,14 @@ spring:
     port: 15672
     username: guest
     password: guest
-    exchange: x.mp3-resource-upload
-    routingkey: rk.mp3-resource-upload
-    queue: q.mp3-resource-upload
+    exchange:
+      resource-uploaded: x.mp3-resource-uploaded
+      resource-processed: x.mp3-resource-processed
+    routingkey:
+      resource-uploaded: rk.mp3-resource-uploaded
+      resource-processed: rk.mp3-resource-processed
+    queue:
+      resource-uploaded: q.mp3-resource-uploaded
   codec:
     max-in-memory-size: 10MB
   application:

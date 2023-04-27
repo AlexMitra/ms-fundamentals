@@ -34,6 +34,7 @@ public class Mp3ResourceConverter {
         .id(mp3ResourceInfo.getId())
         .resourceId(mp3ResourceInfo.getResourceId())
         .fileSize(mp3ResourceInfo.getFileSize())
+        .storageId(mp3ResourceInfo.getStorageId())
         .build();
   }
 
@@ -41,6 +42,7 @@ public class Mp3ResourceConverter {
     return Mp3ResourceInfo.builder()
         .resourceId(dto.getResourceId())
         .fileSize(dto.getFileSize())
+        .storageId(dto.getStorageId())
         .build();
   }
 }

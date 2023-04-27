@@ -41,17 +41,17 @@ public class SongController {
 
   @PostMapping
   public ResponseEntity<SongIdDTO> save(@RequestBody SongInfoDTO songInfoDTO) {
-    // SERVICE_VERSION is just for client load balancing testing purpose
-    log.info("Song service version: " + System.getenv("SERVICE_VERSION"));
-    SongIdDTO dto = songService.save(songInfoDTO);
-    return ResponseEntity.ok(dto);
+    return songService.save(songInfoDTO)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound()
+            .build());
   }
 
   @DeleteMapping(value = "/{id}")
-  public ResponseEntity<?> delete(@PathVariable Integer id) {
-    Optional<SongInfoDTO> song = songService.delete(id);
+  public ResponseEntity<?> deleteByResourceId(@PathVariable Integer id) {
+    Optional<SongInfoDTO> song = songService.deleteByResourceId(id);
     if (song.isEmpty()) {
-      return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+      return ResponseEntity.notFound().build();
     }
     return song.map(ResponseEntity::ok)
         .get();

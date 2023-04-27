@@ -2,8 +2,6 @@ server:
   port: 8081
 
 aws:
-  s3:
-    bucket: a-lautsou-mp3-resources
   region: us-east-1
 
 spring:
@@ -16,8 +14,14 @@ spring:
     port: 15672
     username: guest
     password: guest
-    exchange: x.mp3-resource-upload
-    routingkey: rk.mp3-resource-upload
+    exchange:
+      resource-uploaded: x.mp3-resource-uploaded
+      resource-processed: x.mp3-resource-processed
+    routingkey:
+      resource-uploaded: rk.mp3-resource-uploaded
+      resource-processed: rk.mp3-resource-processed
+    queue:
+      resource-processed: q.mp3-resource-processed
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5001/mp3ResourceDB
@@ -38,3 +42,23 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      storage-service:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true

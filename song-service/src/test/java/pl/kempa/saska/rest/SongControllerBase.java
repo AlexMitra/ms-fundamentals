@@ -3,6 +3,8 @@ package pl.kempa.saska.rest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +31,7 @@ public abstract class SongControllerBase {
   @BeforeEach
   public void setup() {
     Integer resourceId = 111;
-    given(songService.save(any(SongInfoDTO.class))).willReturn(new SongIdDTO(resourceId));
+    given(songService.save(any(SongInfoDTO.class))).willReturn(Optional.of(new SongIdDTO(resourceId)));
     RestAssuredMockMvc.webAppContextSetup(webApplicationContext);
   }
 }

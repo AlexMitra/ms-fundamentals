@@ -25,6 +25,7 @@ import pl.kempa.saska.converter.Mp3ResourceConverter;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 import pl.kempa.saska.dto.Mp3ResourceInfoDTO;
 import pl.kempa.saska.dto.Mp3ResourceS3InfoDTO;
+import pl.kempa.saska.dto.StorageDTO;
 import pl.kempa.saska.exception.IOServiceException;
 import pl.kempa.saska.service.Mp3ResourceDBService;
 import pl.kempa.saska.service.Mp3ResourceS3Service;
@@ -69,13 +70,14 @@ public class Mp3ResourceS3ServiceImpl implements Mp3ResourceS3Service {
   }
 
   @Override
-  public Optional<Mp3ResourceIdDTO> upload(MultipartFile mp3Resource, String bucketName) {
+  public Optional<Mp3ResourceIdDTO> upload(MultipartFile mp3Resource, StorageDTO storageDTO) {
     try {
-      ObjectMetadata metadata = new ObjectMetadata();
+      var metadata = new ObjectMetadata();
       metadata.setContentLength(mp3Resource.getSize());
-      Integer resourceId = generator.generateId(mp3Resource.getOriginalFilename());
+      var resourceId = generator.generateId(mp3Resource.getOriginalFilename());
+      var fullFilePath = storageDTO.getPath() + resourceId.toString();
       PutObjectResult putObjectResult =
-          s3Client.putObject(bucketName, resourceId.toString(), mp3Resource.getInputStream(),
+          s3Client.putObject(storageDTO.getBucket(), fullFilePath, mp3Resource.getInputStream(),
               metadata);
       return Optional.ofNullable(putObjectResult.getETag())
           .map(etag -> resourceId)

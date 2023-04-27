@@ -7,12 +7,10 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.retry.annotation.EnableRetry;
 
-import pl.kempa.saska.config.LoadBalancerConfig;
-
 @EnableRetry
 @EnableFeignClients
 @EnableEurekaClient
-@LoadBalancerClients(defaultConfiguration = LoadBalancerConfig.class)
+@LoadBalancerClients
 @SpringBootApplication
 public class ResourceProcessorApp {
   public static void main(String[] args) {

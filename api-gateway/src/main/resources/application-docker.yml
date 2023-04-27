@@ -4,6 +4,11 @@ spring:
   cloud:
     gateway:
       routes:
+        ## STORAGE SERVICE
+        - id: storage-service
+          uri: lb://storage-service
+          predicates:
+            - Path=/api/storages/**
         ## RESOURCE SERVICE
         - id: mp3-resource-service
           uri: lb://resource-service

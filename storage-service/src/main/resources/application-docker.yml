@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+app:
+  staging-bucket: a-lautsou-resources-storage-staging
+  permanent-bucket: a-lautsou-resources-storage-permanent
+
+aws:
+  region: us-east-1
+
+spring:
+  application:
+    name: storage-service
+  datasource:
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://service-discovery:8761/eureka

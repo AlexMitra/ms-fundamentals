@@ -31,20 +31,19 @@ public class SongServiceImpl implements SongService {
 
   @Override
   public Optional<SongInfoDTO> getByResourceId(Integer resourceId) {
-    return Optional.ofNullable(repository.findByResourceId(resourceId))
+    return repository.findByResourceId(resourceId)
         .map(converter::toDTO);
   }
 
   @Override
-  public SongIdDTO save(SongInfoDTO songInfoDTO) {
+  public Optional<SongIdDTO> save(SongInfoDTO songInfoDTO) {
     repository.save(converter.toEntity(songInfoDTO));
-    SongInfo song = repository.findByResourceId(songInfoDTO.getResourceId());
-    return new SongIdDTO(song.getResourceId());
+    return repository.findByResourceId(songInfoDTO.getResourceId()).map(SongInfo::getResourceId).map(SongIdDTO::new);
   }
 
   @Override
-  public Optional<SongInfoDTO> delete(Integer id) {
-    Optional<SongInfo> song = repository.findById(id);
+  public Optional<SongInfoDTO> deleteByResourceId(Integer resourceId) {
+    Optional<SongInfo> song = repository.findByResourceId(resourceId);
     song.ifPresent(repository::delete);
     return song.map(converter::toDTO);
   }

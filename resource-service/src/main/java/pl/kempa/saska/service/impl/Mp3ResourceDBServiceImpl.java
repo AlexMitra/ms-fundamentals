@@ -44,6 +44,15 @@ public class Mp3ResourceDBServiceImpl implements Mp3ResourceDBService {
   }
 
   @Override
+  public void update(Mp3ResourceInfoDTO mp3ResourceInfoDTO) {
+    var resourceInfo = repository.findById(mp3ResourceInfoDTO.getId());
+    resourceInfo.ifPresent(entity -> {
+      entity.setStorageId(mp3ResourceInfoDTO.getStorageId());
+      repository.save(entity);
+    });
+  }
+
+  @Override
   public Optional<Mp3ResourceInfoDTO> delete(Integer resourceId) {
     Optional<Mp3ResourceInfo> mp3ResourceInfo =
         Optional.ofNullable(repository.findByResourceId(resourceId));
