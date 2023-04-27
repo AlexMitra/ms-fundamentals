@@ -46,7 +46,7 @@ public class StorageController {
   }
 
   @GetMapping
-  public ResponseEntity<List<StorageDTO>> listStorages(@RequestParam String storageType) {
+  public ResponseEntity<List<StorageDTO>> listStorages(@RequestParam(required = false) String storageType) {
     var storageTypeOpt = Optional.ofNullable(storageType);
     if (storageTypeOpt.isPresent()) {
       return storageTypeOpt.map(StorageType::valueOfStorage)
