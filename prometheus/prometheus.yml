@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'storage-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['storage-service:8080']
+  - job_name: 'resource-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['resource-service:8080']
+  - job_name: 'resource-processor'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['resource-processor:8080']
+  - job_name: 'song-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'song-service:8080' ]

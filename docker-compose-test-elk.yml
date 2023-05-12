@@ -1,0 +1,81 @@
+version: '3.9'
+services:
+  ## Message Broker
+  rabbitmq:
+    container_name: rabbitmq
+    image: ${RABBITMQ_IMAGE}
+    ports:
+      - "5672:5672" #JMS Port
+      - "15672:15672" #Management Port - default user:pass = guest:guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  ## Logs and tracing
+  elasticsearch:
+    container_name: elasticsearch
+    image: ${ELASTICSEARCH_IMAGE}
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data:rw
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+
+  logstash:
+    container_name: logstash
+    image: ${LOGSTASH_IMAGE}
+    restart: on-failure
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "25826:25826"
+      - "5044:5044"
+    environment:
+      LS_JAVA_OPTS: -Xms512m -Xmx512m
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    container_name: kibana
+    image: ${KIBANA_IMAGE}
+    restart: on-failure
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    container_name: filebeat
+    image: ${FILEBEAT_IMAGE}
+    command: filebeat -e -strict.perms=false
+    volumes:
+      - ./filebeat/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./filebeat/data:/usr/share/filebeat/data:rw
+    user: root
+    restart: on-failure
+    depends_on:
+      - logstash
+
+  resource-processor:
+    container_name: resource-processor
+    image: resource-processor-image
+    ports:
+      - ${MP3_RESOURCE_PROCESSOR_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
+    depends_on:
+      - rabbitmq
+      - logstash
+
+volumes:
+  rabbitmq-data:
+

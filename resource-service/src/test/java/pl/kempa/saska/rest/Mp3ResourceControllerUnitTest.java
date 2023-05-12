@@ -35,6 +35,7 @@ import com.amazonaws.services.s3.model.ListObjectsRequest;
 
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
 import pl.kempa.saska.dto.Mp3ResourceS3InfoDTO;
+import pl.kempa.saska.dto.StorageDTO;
 import pl.kempa.saska.rest.util.WebClientUtil;
 import pl.kempa.saska.rest.validator.Mp3ResourceValidator;
 import pl.kempa.saska.service.Mp3ResourceDBService;
@@ -115,7 +116,7 @@ class Mp3ResourceControllerUnitTest {
         .readAllBytes();
     given(validator.validate(mp3file)).willReturn(Optional.empty());
     var resourceIdDTO = Optional.of(new Mp3ResourceIdDTO(1111));
-    given(s3Service.upload(any(MultipartFile.class), any(String.class))).willReturn(resourceIdDTO);
+    given(s3Service.upload(any(MultipartFile.class), any(StorageDTO.class))).willReturn(resourceIdDTO);
     given(mp3file.getSize()).willReturn((long) fileBytes.length);
 
     // when

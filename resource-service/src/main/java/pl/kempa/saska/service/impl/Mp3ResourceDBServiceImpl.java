@@ -41,6 +41,8 @@ public class Mp3ResourceDBServiceImpl implements Mp3ResourceDBService {
   @Override
   public void save(Mp3ResourceInfoDTO mp3ResourceInfoDTO) {
     repository.save(converter.toEntity(mp3ResourceInfoDTO));
+    log.info("Information about resource {} was saved to resource-service DB",
+        mp3ResourceInfoDTO.getResourceId());
   }
 
   @Override

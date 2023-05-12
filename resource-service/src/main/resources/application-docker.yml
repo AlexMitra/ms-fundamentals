@@ -7,6 +7,8 @@ aws:
   region: us-east-1
 
 spring:
+  application:
+    name: resource-service
   servlet:
     multipart:
       max-file-size: 10MB
@@ -30,8 +32,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-  application:
-    name: resource-service
 
 eureka:
   client:
@@ -42,9 +42,21 @@ management:
   health:
     circuitbreakers:
       enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*'
   endpoint:
     health:
       show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 resilience4j:
   circuitbreaker:

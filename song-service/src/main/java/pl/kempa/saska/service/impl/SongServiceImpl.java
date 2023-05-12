@@ -8,6 +8,7 @@ import java.util.stream.StreamSupport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.converter.SongConverter;
 import pl.kempa.saska.dto.SongIdDTO;
 import pl.kempa.saska.dto.SongInfoDTO;
@@ -16,6 +17,7 @@ import pl.kempa.saska.repository.model.SongInfo;
 import pl.kempa.saska.service.SongService;
 
 @Service
+@Slf4j
 public class SongServiceImpl implements SongService {
 
   @Autowired private SongRepository repository;
@@ -38,7 +40,10 @@ public class SongServiceImpl implements SongService {
   @Override
   public Optional<SongIdDTO> save(SongInfoDTO songInfoDTO) {
     repository.save(converter.toEntity(songInfoDTO));
-    return repository.findByResourceId(songInfoDTO.getResourceId()).map(SongInfo::getResourceId).map(SongIdDTO::new);
+    log.info("Information about song {} was saved to song-service DB", songInfoDTO.getResourceId());
+    return repository.findByResourceId(songInfoDTO.getResourceId())
+        .map(SongInfo::getResourceId)
+        .map(SongIdDTO::new);
   }
 
   @Override

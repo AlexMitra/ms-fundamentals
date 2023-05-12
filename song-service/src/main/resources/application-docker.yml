@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: song-service
   datasource:
     driver-class-name: org.postgresql.Driver
   jpa:
@@ -12,10 +14,23 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-  application:
-    name: song-service
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://service-discovery:8761/eureka
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

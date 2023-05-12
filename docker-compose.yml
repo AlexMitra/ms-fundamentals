@@ -58,6 +58,57 @@ services:
     ports:
       - "5672:5672" #JMS Port
       - "15672:15672" #Management Port - default user:pass = guest:guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  ## Logs and tracing
+  elasticsearch:
+    container_name: elasticsearch
+    image: ${ELASTICSEARCH_IMAGE}
+    volumes:
+      - ./elasticsearch/data:/usr/share/elasticsearch/data:rw
+    ports:
+      - "9200:9200"
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+
+  logstash:
+    container_name: logstash
+    image: ${LOGSTASH_IMAGE}
+    restart: on-failure
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "25826:25826"
+      - "5044:5044"
+    environment:
+      LS_JAVA_OPTS: -Xms512m -Xmx512m
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    container_name: kibana
+    image: ${KIBANA_IMAGE}
+    restart: on-failure
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    container_name: filebeat
+    image: ${FILEBEAT_IMAGE}
+    command: filebeat -e -strict.perms=false
+    volumes:
+      - ./filebeat/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./filebeat/data:/usr/share/filebeat/data:rw
+    user: root
+    restart: on-failure
+    depends_on:
+      - logstash
 
   ## Eureka Server
   service-discovery:
@@ -76,12 +127,19 @@ services:
       - ${API_GATEWAY_PORT}:8080
     environment:
       SPRING_PROFILES_ACTIVE: "docker"
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
     depends_on:
       - service-discovery
+      - logstash
 
   ## Storage Service App
   storage-service:
+    container_name: storage-service
     image: storage-service-image
+    volumes:
+      - /c/Users/UX508545/.aws:/root/.aws/:ro
     ports:
       - ${MP3_STORAGE_SERVICE_PORT}:8080
     environment:
@@ -93,16 +151,21 @@ services:
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       AWS_PROFILE: "default"
-    volumes:
-      - /c/Users/UX508545/.aws:/root/.aws/:ro
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
     depends_on:
       - postgres-storages
       - service-discovery
       - api-gateway
+      - logstash
 
   ## Resource Service App
   resource-service:
+    container_name: resource-service
     image: resource-service-image
+    volumes:
+      - /c/Users/UX508545/.aws:/root/.aws/:ro
     ports:
       - ${MP3_RESOURCE_SERVICE_PORT}:8080
     environment:
@@ -114,17 +177,20 @@ services:
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       AWS_PROFILE: "default"
-    volumes:
-      - /c/Users/UX508545/.aws:/root/.aws/:ro
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
     depends_on:
       - postgres-mp3resource
       - rabbitmq
       - service-discovery
       - api-gateway
       - storage-service
+      - logstash
 
   ## Resource Processor App
   resource-processor:
+    container_name: resource-processor
     image: resource-processor-image
     ports:
       - ${MP3_RESOURCE_PROCESSOR_PORT}:8080
@@ -133,13 +199,18 @@ services:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
       SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
     depends_on:
       - rabbitmq
       - service-discovery
       - api-gateway
+      - logstash
 
-  ## Song Service App N1
+  ## Song Service App
   song-service:
+    container_name: song-service
     image: song-service-image
     ports:
       - ${MP3_SONG_SERVICE_PORT}:8080
@@ -148,13 +219,55 @@ services:
       SPRING_DATASOURCE_URL: ${SONGS_DB_URL}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
     depends_on:
       - postgres-songs
+      - rabbitmq
       - service-discovery
       - api-gateway
+      - logstash
+
+  ## Monitoring
+  prometheus:
+    container_name: prometheus
+    image: ${PROMETHEUS_IMAGE}
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    depends_on:
+      - service-discovery
+      - api-gateway
+      - storage-service
+      - resource-service
+      - resource-processor
+      - song-service
+
+  grafana:
+    container_name: grafana
+    image: ${GRAFANA_IMAGE}
+    restart: unless-stopped
+    volumes:
+      - ./grafana/grafana_datasources.yml:/etc/grafana/provisioning/datasources/all.yaml
+      - grafana-data:/var/lib/grafana
+    ports:
+      - 3000:3000
+    links:
+      - prometheus:prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
 
 volumes:
   postgres-mp3resource:
   postgres-songs:
   postgres-storages:
+  rabbitmq-data:
+  grafana-data:
 
