@@ -19,7 +19,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 
-import lombok.AllArgsConstructor;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.converter.Mp3ResourceConverter;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
@@ -33,7 +35,6 @@ import pl.kempa.saska.service.util.ResourceIdGenerator;
 import pl.kempa.saska.rest.exception.Mp3DetailsNotFoundException;
 
 @Service
-@AllArgsConstructor
 @Slf4j
 public class Mp3ResourceS3ServiceImpl implements Mp3ResourceS3Service {
 
@@ -41,6 +42,20 @@ public class Mp3ResourceS3ServiceImpl implements Mp3ResourceS3Service {
   private Mp3ResourceDBService mp3ResourceDBService;
   private Mp3ResourceConverter converter;
   private ResourceIdGenerator generator;
+  private Counter filesUploadedToStaging;
+
+  public Mp3ResourceS3ServiceImpl(AmazonS3 s3Client, Mp3ResourceDBService mp3ResourceDBService,
+                                  Mp3ResourceConverter converter, ResourceIdGenerator generator,
+                                  MeterRegistry meterRegistry) {
+    this.s3Client = s3Client;
+    this.mp3ResourceDBService = mp3ResourceDBService;
+    this.converter = converter;
+    this.generator = generator;
+    this.filesUploadedToStaging = Counter
+        .builder("upload.mp3.to.staging.counter")
+        .description("count number of files uploaded to STAGING storage")
+        .register(meterRegistry);
+  }
 
   @Override
   public List<Mp3ResourceS3InfoDTO> getAll(ListObjectsRequest listObjectsRequest) {
@@ -69,6 +84,7 @@ public class Mp3ResourceS3ServiceImpl implements Mp3ResourceS3Service {
     }
   }
 
+  @Timed("upload.mp3.to.staging")
   @Override
   public Optional<Mp3ResourceIdDTO> upload(MultipartFile mp3Resource, StorageDTO storageDTO) {
     try {
@@ -79,9 +95,11 @@ public class Mp3ResourceS3ServiceImpl implements Mp3ResourceS3Service {
       PutObjectResult putObjectResult =
           s3Client.putObject(storageDTO.getBucket(), fullFilePath, mp3Resource.getInputStream(),
               metadata);
-      return Optional.ofNullable(putObjectResult.getETag())
+      var mp3ResourceIdDTO = Optional.ofNullable(putObjectResult.getETag())
           .map(etag -> resourceId)
           .map(Mp3ResourceIdDTO::new);
+      mp3ResourceIdDTO.ifPresent(dto -> filesUploadedToStaging.increment(1));
+      return mp3ResourceIdDTO;
     } catch (IOException e) {
       throw new IOServiceException(e.getMessage(), e);
     }

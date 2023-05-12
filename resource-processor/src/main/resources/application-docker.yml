@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: resource-processor
   rabbitmq:
     exchange:
       resource-uploaded: x.mp3-resource-uploaded
@@ -13,10 +15,23 @@ spring:
       resource-uploaded: q.mp3-resource-uploaded
   codec:
     max-in-memory-size: 10MB
-  application:
-    name: resource-processor
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://service-discovery:8761/eureka
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

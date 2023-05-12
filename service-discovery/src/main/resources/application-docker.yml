@@ -4,3 +4,22 @@ eureka:
     fetch-registry: false
 server:
   port: 8761
+
+spring:
+  application:
+    name: service-discovery
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true

@@ -15,12 +15,14 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.dto.Mp3DetailsDTO;
 
 @Component
 @Slf4j
 public class Mp3DetailsProcessor {
+  @Timed("process.mp3.metadata")
   public Mp3DetailsDTO processMp3(InputStream inputStream, Integer resourceId)
       throws TikaException, IOException, SAXException {
     ContentHandler handler = new DefaultHandler();
@@ -35,6 +37,7 @@ public class Mp3DetailsProcessor {
         .map(Double::longValue)
         .map(Duration::ofMillis)
         .map(d -> String.format("%d:%d", d.toMinutesPart(), d.toSecondsPart()));
+    log.info("Metadata for resource {} was parsed", resourceId);
     return Mp3DetailsDTO.builder()
         .resourceId(resourceId)
         .title(metadata.get("title"))

@@ -35,7 +35,7 @@ public class RabbitMQConfig {
   private String resourceProcessedEx;
 
   @Value("${spring.rabbitmq.routingkey.resource-processed}")
-  private String resourceProcessedRK;
+  private String resourceProcessedRk;
 
   @Value("${spring.rabbitmq.queue.resource-processed}")
   private String resourceProcessedQ;
@@ -57,7 +57,7 @@ public class RabbitMQConfig {
     return BindingBuilder
         .bind(mp3ProcessedNotificationQueue())
         .to(mp3ProcessedNotificationExchange())
-        .with(resourceProcessedRK)
+        .with(resourceProcessedRk)
         .noargs();
   }
 

@@ -58,9 +58,12 @@ services:
     ports:
       - "5672:5672" #JMS Port
       - "15672:15672" #Management Port - default user:pass = guest:guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
 
 volumes:
   postgres-mp3resource:
   postgres-songs:
   postgres-storages:
+  rabbitmq-data:
 

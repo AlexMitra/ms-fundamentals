@@ -69,10 +69,10 @@ public class StorageServiceImpl implements StorageService {
 
   @Override
   public Optional<StorageIdDTO> create(StorageDTO storageDTO) {
-    if (!s3Client.doesBucketExistV2(storageDTO.getBucket())) {
+    if (!s3Util.isBucketPresent(storageDTO.getBucket())) {
       try {
         Bucket bucket = s3Client.createBucket(storageDTO.getBucket());
-        s3Util.createFolder(bucket, storageDTO);
+        s3Util.createFolder(bucket.getName(), storageDTO.getPath());
         repository.save(converter.toEntity(storageDTO));
         return repository.findByBucketName(storageDTO.getBucket())
             .map(StorageEntity::getId)
@@ -84,7 +84,8 @@ public class StorageServiceImpl implements StorageService {
     }
     var storageType = storageDTO.getStorageType()
         .name();
-    if (s3Client.doesBucketExistV2(storageDTO.getBucket()) && !repository.existsByStorageType(storageType)) {
+    if (s3Client.doesBucketExistV2(storageDTO.getBucket()) && !repository.existsByStorageType(
+        storageType)) {
       repository.save(converter.toEntity(storageDTO));
     }
     return Optional.empty();

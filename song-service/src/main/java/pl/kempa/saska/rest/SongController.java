@@ -41,6 +41,7 @@ public class SongController {
 
   @PostMapping
   public ResponseEntity<SongIdDTO> save(@RequestBody SongInfoDTO songInfoDTO) {
+    log.info("Begin saving information about song {}", songInfoDTO.getResourceId());
     return songService.save(songInfoDTO)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound()

@@ -27,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.amazonaws.services.s3.model.GetObjectRequest;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import pl.kempa.saska.dto.ApiErrorDTO;
@@ -84,10 +85,13 @@ public class Mp3ResourceController {
         .body(inputStream.readAllBytes());
   }
 
+  @Timed("upload.mp3.full")
   @PostMapping
   public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) {
+    log.info("Begin uploading file {}", file.getName());
     Optional<ApiErrorDTO> error = validator.validate(file);
     if (error.isPresent()) {
+      log.warn("There are validation error(s) while uploading file {}", file.getName());
       return ResponseEntity.badRequest()
           .body(error.get());
     }

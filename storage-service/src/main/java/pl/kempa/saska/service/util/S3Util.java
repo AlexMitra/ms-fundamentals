@@ -6,16 +6,15 @@ import java.io.InputStream;
 import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import pl.kempa.saska.dto.StorageDTO;
 
 @Component
 @AllArgsConstructor
@@ -24,17 +23,31 @@ public class S3Util {
 
   private AmazonS3 s3Client;
 
-  public void createFolder(Bucket bucket, StorageDTO storageDTO) {
+  public boolean isBucketPresent(String bucketName) {
+    return s3Client.doesBucketExistV2(bucketName);
+  }
+
+  public boolean isFolderPresent(String bucketName, String folder) {
+    ListObjectsV2Result result = s3Client.listObjectsV2(bucketName, folder);
+    return result.getKeyCount() > 0;
+  }
+
+  public void createFolder(String bucketName, String path) {
     ObjectMetadata metadata = new ObjectMetadata();
     // create empty content
     metadata.setContentLength(0);
     InputStream emptyContent = new ByteArrayInputStream(new byte[0]);
-    var path = storageDTO.getPath();
-    var folderPath = path.endsWith("/") ? path : path.concat("/");
     PutObjectRequest putObjectRequest =
-        new PutObjectRequest(bucket.getName(), folderPath, emptyContent,
+        new PutObjectRequest(bucketName, adjustFolderPath(path), emptyContent,
             metadata);
     s3Client.putObject(putObjectRequest);
+  }
+
+  private String adjustFolderPath(String path) {
+    if (path.isEmpty()) {
+      return path;
+    }
+    return path.endsWith("/") ? path : path.concat("/");
   }
 
   public void deleteBucketContent(String bucketName) {

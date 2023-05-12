@@ -11,6 +11,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static pl.kempa.saska.dto.StorageType.STAGING;
+import static pl.kempa.saska.dto.StorageType.TEST;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +40,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 
 import pl.kempa.saska.converter.Mp3ResourceConverter;
 import pl.kempa.saska.dto.Mp3ResourceIdDTO;
+import pl.kempa.saska.dto.StorageDTO;
 import pl.kempa.saska.service.Mp3ResourceDBService;
 import pl.kempa.saska.service.util.ResourceIdGenerator;
 import pl.kempa.saska.rest.exception.Mp3DetailsNotFoundException;
@@ -136,9 +139,17 @@ class Mp3ResourceS3ServiceImplUnitTest {
     given(s3Client.putObject(any(String.class), any(String.class), any(InputStream.class),
         any(ObjectMetadata.class))).willReturn(putObjectResult);
     given(putObjectResult.getETag()).willReturn("test_eTag");
+    StorageDTO testStorage = StorageDTO.builder()
+        .id(1)
+        .storageType(TEST)
+        .bucket("a-lautsou" +
+            "-resources-storage" +
+            "-test-1")
+        .path("files/")
+        .build();
 
     // when
-    Optional<Mp3ResourceIdDTO> resourceIdDTO = s3Service.upload(mp3Resource, "test_bucket_name");
+    Optional<Mp3ResourceIdDTO> resourceIdDTO = s3Service.upload(mp3Resource, testStorage);
 
     // then
     assertTrue(resourceIdDTO.isPresent());
