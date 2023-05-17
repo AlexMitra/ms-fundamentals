@@ -13,6 +13,7 @@ import com.amazonaws.AmazonServiceException;
 
 import pl.kempa.saska.dto.ApiErrorDTO;
 import pl.kempa.saska.exception.IOServiceException;
+import pl.kempa.saska.exception.StorageAuthorizationException;
 import pl.kempa.saska.rest.exception.IncorrectIdParamException;
 import pl.kempa.saska.rest.exception.Mp3DetailsNotFoundException;
 
@@ -53,8 +54,15 @@ public class RestExceptionHandler {
     return new ResponseEntity(errorDTO, new HttpHeaders(), errorDTO.getStatus());
   }
 
+  @ExceptionHandler({StorageAuthorizationException.class})
+  public ResponseEntity<ApiErrorDTO> handleStorageAuthorizationException(
+      StorageAuthorizationException e) {
+    var errorDTO = new ApiErrorDTO(HttpStatus.UNAUTHORIZED, e.getMessage());
+    return new ResponseEntity(errorDTO, new HttpHeaders(), errorDTO.getStatus());
+  }
+
   @ExceptionHandler({RuntimeException.class})
-  public ResponseEntity<ApiErrorDTO> handleRuntimeException(IOServiceException e) {
+  public ResponseEntity<ApiErrorDTO> handleRuntimeException(RuntimeException e) {
     var errorDTO = new ApiErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
     return new ResponseEntity(errorDTO, new HttpHeaders(), errorDTO.getStatus());
   }

@@ -4,6 +4,8 @@ server:
 app:
   staging-bucket: a-lautsou-resources-storage-staging
   permanent-bucket: a-lautsou-resources-storage-permanent
+  oauth2:
+    signing-key: 123
 
 aws:
   region: us-east-1
@@ -24,6 +26,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  security:
+    oauth2:
+      client:
+        clientId: storage-client
+        clientSecret: noonewilleverguess
+      resource:
+        tokenInfoUri: http://localhost:8079/oauth/check_token
 
 eureka:
   client:

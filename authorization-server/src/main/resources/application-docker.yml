@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: authorization-server
+
+app:
+  oauth2:
+    client-id: storage-client
+    client-secret: noonewilleverguess
+    token-validity: 3600
+    signing-key: 123
+    user-name: francis_user
+    user-pass: upass
+    admin-name: francis_admin
+    admin-pass: apass

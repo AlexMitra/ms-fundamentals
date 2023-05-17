@@ -21,6 +21,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  security:
+    oauth2:
+      client:
+        clientId: storage-client
+        clientSecret: noonewilleverguess
+      resource:
+        tokenInfoUri: http://authorization-server:8079/oauth/check_token
 
 eureka:
   client:
