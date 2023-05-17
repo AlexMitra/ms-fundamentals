@@ -81,13 +81,15 @@ public class Mp3ResourceProcessedListener {
         });
   }
 
-  private Optional<String> copyResourceToStorage(StorageDTO current, StorageDTO target, String resourceId) {
-    CopyObjectRequest copyRequest = new CopyObjectRequest().withSourceBucketName(current.getBucket())
-        .withSourceKey(current.getPath()
-            .concat(resourceId))
-        .withDestinationBucketName(target.getBucket())
-        .withDestinationKey(target.getPath()
-            .concat(resourceId));
+  private Optional<String> copyResourceToStorage(StorageDTO current, StorageDTO target,
+                                                 String resourceId) {
+    CopyObjectRequest copyRequest =
+        new CopyObjectRequest().withSourceBucketName(current.getBucket())
+            .withSourceKey(current.getPath()
+                .concat(resourceId))
+            .withDestinationBucketName(target.getBucket())
+            .withDestinationKey(target.getPath()
+                .concat(resourceId));
 
     try {
       CopyObjectResult result = s3Client.copyObject(copyRequest);

@@ -5,4 +5,5 @@ include 'resource-processor'
 include 'service-discovery'
 include 'api-gateway'
 include 'storage-service'
+include 'authorization-server'
 

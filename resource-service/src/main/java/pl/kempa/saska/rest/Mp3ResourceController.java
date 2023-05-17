@@ -1,5 +1,6 @@
 package pl.kempa.saska.rest;
 
+import static java.util.Optional.ofNullable;
 import static pl.kempa.saska.dto.StorageType.STAGING;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRange;
 import org.springframework.http.HttpStatus;
@@ -42,6 +44,7 @@ import pl.kempa.saska.rest.validator.Mp3ResourceValidator;
 import pl.kempa.saska.service.Mp3ResourceDBService;
 import pl.kempa.saska.service.Mp3ResourceS3Service;
 import pl.kempa.saska.service.RabbitMQService;
+import pl.kempa.saska.service.TokeService;
 
 @RestController
 @RequestMapping(value = "/api/resources")
@@ -55,6 +58,8 @@ public class Mp3ResourceController {
   private RabbitMQService rabbitMQService;
   private SongsApiClient songsApiClient;
   private WebClientUtil webClientUtil;
+  private TokeService tokeService;
+  private Tracer tracer;
 
   @GetMapping
   public ResponseEntity<List<Mp3ResourceInfoDTO>> getAll() {
@@ -87,7 +92,9 @@ public class Mp3ResourceController {
 
   @Timed("upload.mp3.full")
   @PostMapping
-  public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) {
+  public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file,
+                                  @RequestHeader(name = "Authorization",
+                                      required = false) String token) {
     log.info("Begin uploading file {}", file.getName());
     Optional<ApiErrorDTO> error = validator.validate(file);
     if (error.isPresent()) {
@@ -96,12 +103,14 @@ public class Mp3ResourceController {
           .body(error.get());
     }
     // 1) get STAGING storage info
+    putToken(token);
     var stagingStorageOpt = webClientUtil.callGetStoragesByType(STAGING)
         .stream()
         .findFirst();
     if (stagingStorageOpt.isEmpty()) {
       return ResponseEntity.internalServerError()
-          .body(new ApiErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR, "Can't save file to storage, try later"));
+          .body(new ApiErrorDTO(HttpStatus.INTERNAL_SERVER_ERROR,
+              "Can't save file to storage, try later"));
     }
     // 2) upload file
     var resourceIdDTO = stagingStorageOpt.flatMap(s -> s3Service.upload(file, s));
@@ -115,6 +124,14 @@ public class Mp3ResourceController {
     resourceIdDTO.ifPresent(rabbitMQService::mp3ResourceUploadMessageSend);
     return resourceIdDTO.map(ResponseEntity::ok)
         .orElseThrow(() -> new RuntimeException("Something went wrong"));
+  }
+
+  private void putToken(String token) {
+    ofNullable(token)
+        .map(t -> tracer.currentSpan())
+        .map(s -> s.context())
+        .map(c -> c.traceId())
+        .ifPresent(traceId -> tokeService.put(traceId, token.replace("Bearer ", "")));
   }
 
   @DeleteMapping

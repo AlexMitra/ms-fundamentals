@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +35,7 @@ public class StorageController {
   private static final List<StorageType> limitedStorageTypes = List.of(PERMANENT, STAGING);
   private StorageService service;
 
+  @PreAuthorize("hasRole('USER')")
   @GetMapping(value = "/{id}")
   public ResponseEntity<?> getStorageById(@PathVariable Integer id) {
     Optional<StorageDTO> storageDTO = service.getById(id);
@@ -45,6 +47,7 @@ public class StorageController {
         .get();
   }
 
+  @PreAuthorize("hasRole('USER')")
   @GetMapping
   public ResponseEntity<List<StorageDTO>> listStorages(@RequestParam(required = false) String storageType) {
     var storageTypeOpt = Optional.ofNullable(storageType);
@@ -58,6 +61,7 @@ public class StorageController {
     return ResponseEntity.ok(service.getAll());
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @PostMapping
   public ResponseEntity<?> createStorage(@RequestBody StorageDTO storageDTO) {
     if (limitedStorageTypes.contains(storageDTO.getStorageType()) && service.isExistsByStorageType(
@@ -71,6 +75,7 @@ public class StorageController {
         .get();
   }
 
+  @PreAuthorize("hasRole('ADMIN')")
   @DeleteMapping(value = "/{id}")
   public ResponseEntity<?> delete(@PathVariable Integer id) {
     Optional<StorageIdDTO> storageIdDTO = service.delete(id);

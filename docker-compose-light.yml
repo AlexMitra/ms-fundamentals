@@ -1,0 +1,198 @@
+version: '3.9'
+services:
+  ## Storage Service DB
+  postgres-storages:
+    container_name: postgres-storages
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: storagesDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-storages:/var/lib/postgresql/data
+      - ./sql/storagesdb_init.sql:/docker-entrypoint-initdb.d/storagesdb_init.sql
+    expose:
+      - ${STORAGES_DB_PORT}
+    ports:
+      - ${STORAGES_DB_PORT}:5432
+    restart: always
+
+  ## Resource Service DB
+  postgres-mp3resource:
+    container_name: postgres-mp3resource
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: mp3ResourceDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-mp3resource:/var/lib/postgresql/data
+      - ./sql/mp3resourcedb_init.sql:/docker-entrypoint-initdb.d/mp3resourcedb_init.sql
+    expose:
+      - ${MP3_RESOURCE_DB_PORT}
+    ports:
+      - ${MP3_RESOURCE_DB_PORT}:5432
+    restart: always
+
+  ## Song Service DB
+  postgres-songs:
+    container_name: postgres-songs
+    image: ${POSTGRES_IMAGE}
+    environment:
+      POSTGRES_DB: songsDB
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-songs:/var/lib/postgresql/data
+      - ./sql/songsdb_init.sql:/docker-entrypoint-initdb.d/songsdb_init.sql
+    expose:
+      - ${SONGS_DB_PORT}
+    ports:
+      - ${SONGS_DB_PORT}:5432
+    restart: always
+
+  ## Message Broker
+  rabbitmq:
+    container_name: rabbitmq
+    image: ${RABBITMQ_IMAGE}
+    ports:
+      - "5672:5672" #JMS Port
+      - "15672:15672" #Management Port - default user:pass = guest:guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  ## Eureka Server
+  service-discovery:
+    container_name: service-discovery
+    image: service-discovery-image
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+
+  ## API Gateway
+  api-gateway:
+    container_name: api-gateway
+    image: api-gateway-image
+    restart: on-failure
+    ports:
+      - ${API_GATEWAY_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+    depends_on:
+      - service-discovery
+
+  ## Authorization server
+  authorization-server:
+    container_name: authorization-server
+    image: authorization-server-image
+    ports:
+      - ${AUTHORIZATION_SERVER_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+    depends_on:
+      - service-discovery
+      - api-gateway
+
+  ## Storage Service App
+  storage-service:
+    container_name: storage-service
+    image: storage-service-image
+    volumes:
+      - /c/Users/UX508545/.aws:/root/.aws/:ro
+    ports:
+      - ${MP3_STORAGE_SERVICE_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_DATASOURCE_URL: ${STORAGES_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      AWS_PROFILE: "default"
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
+    depends_on:
+      - postgres-storages
+      - service-discovery
+      - api-gateway
+      - authorization-server
+
+  ## Resource Service App
+  resource-service:
+    container_name: resource-service
+    image: resource-service-image
+    volumes:
+      - /c/Users/UX508545/.aws:/root/.aws/:ro
+    ports:
+      - ${MP3_RESOURCE_SERVICE_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_DATASOURCE_URL: ${MP3_RESOURCE_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      AWS_PROFILE: "default"
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
+    depends_on:
+      - postgres-mp3resource
+      - rabbitmq
+      - service-discovery
+      - api-gateway
+      - storage-service
+      - authorization-server
+
+  ## Resource Processor App
+  resource-processor:
+    container_name: resource-processor
+    image: resource-processor-image
+    ports:
+      - ${MP3_RESOURCE_PROCESSOR_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
+    depends_on:
+      - rabbitmq
+      - service-discovery
+      - api-gateway
+
+  ## Song Service App
+  song-service:
+    container_name: song-service
+    image: song-service-image
+    ports:
+      - ${MP3_SONG_SERVICE_PORT}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+      SPRING_DATASOURCE_URL: ${SONGS_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    labels:
+      collect_logs_with_filebeat: "true"
+      decode_log_event_to_json_object: "true"
+    depends_on:
+      - postgres-songs
+      - rabbitmq
+      - service-discovery
+      - api-gateway
+
+volumes:
+  postgres-mp3resource:
+  postgres-songs:
+  postgres-storages:
+  rabbitmq-data:
+
